@@ -20,14 +20,33 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
-      - name: Check project folder
-        run: ls -la exambrowser-android
+      - name: Extract Android project ZIP
+        shell: bash
+        run: |
+          ZIP_FILE=$(find . -maxdepth 1 -type f -iname '*.zip' | head -n 1)
+          if [ -z "$ZIP_FILE" ]; then
+            echo 'File ZIP proyek Android tidak ditemukan di root repositori.'
+            ls -la
+            exit 1
+          fi
+          echo "Menggunakan arsip: $ZIP_FILE"
+          mkdir -p build-source
+          unzip -q "$ZIP_FILE" -d build-source
+          GRADLE_FILE=$(find build-source -type f -name settings.gradle -o -name settings.gradle.kts | head -n 1)
+          if [ -z "$GRADLE_FILE" ]; then
+            echo 'settings.gradle tidak ditemukan setelah ZIP diekstrak.'
+            find build-source -maxdepth 4 -type f | head -n 80
+            exit 1
+          fi
+          PROJECT_DIR=$(dirname "$GRADLE_FILE")
+          echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
+          echo "Proyek ditemukan di: $PROJECT_DIR"
       - name: Build APK
-        working-directory: exambrowser-android
         run: gradle --no-daemon assembleRelease
+        working-directory: ${{ env.PROJECT_DIR }}
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Exam-Browser-Bani-Ihsan-APK
-          path: exambrowser-android/app/build/outputs/apk/release/app-release.apk
+          path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
