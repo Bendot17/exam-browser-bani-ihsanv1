@@ -2,19 +2,15 @@ name: Build Exam Browser APK
 on:
   workflow_dispatch:
   push:
-    paths:
-      - 'Exam_Browser_Bani_Ihsan_Admin_Guru_GitHub_Build.zip'
-      - '.github/workflows/build-apk.yml'
+    branches: [ main ]
 permissions:
   contents: read
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
+      - name: Checkout source
         uses: actions/checkout@v4
-      - name: Extract Android project
-        run: unzip -q Exam_Browser_Bani_Ihsan_Admin_Guru_GitHub_Build.zip
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
@@ -24,12 +20,13 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Show project files
+        run: ls -la
       - name: Build APK
-        working-directory: exambrowser-android
         run: gradle --no-daemon assembleRelease
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: Exam-Browser-Bani-Ihsan-APK
-          path: exambrowser-android/app/build/outputs/apk/release/app-release.apk
+          path: app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
