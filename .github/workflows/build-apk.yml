@@ -1,52 +1,64 @@
 name: Build Exam Browser APK
+
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
+
 permissions:
   contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout source
         uses: actions/checkout@v4
+
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+
       - name: Extract Android project ZIP
         shell: bash
         run: |
-          ZIP_FILE=$(find . -maxdepth 1 -type f -iname '*.zip' | head -n 1)
+          ZIP_FILE=$(find . -maxdepth 1 -type f -name 'Exam_Browser_Bani_Ihsan_Admin_Guru_FilePicker_Fix_v2.zip' | head -n 1)
+
           if [ -z "$ZIP_FILE" ]; then
-            echo 'File ZIP proyek Android tidak ditemukan di root repositori.'
+            echo 'ZIP proyek APK versi FilePicker V2 tidak ditemukan.'
             ls -la
             exit 1
           fi
+
           echo "Menggunakan arsip: $ZIP_FILE"
           mkdir -p build-source
           unzip -q "$ZIP_FILE" -d build-source
-          GRADLE_FILE=$(find build-source -type f -name settings.gradle -o -name settings.gradle.kts | head -n 1)
+
+          GRADLE_FILE=$(find build-source -type f \( -name settings.gradle -o -name settings.gradle.kts \) | head -n 1)
+
           if [ -z "$GRADLE_FILE" ]; then
-            echo 'settings.gradle tidak ditemukan setelah ZIP diekstrak.'
-            find build-source -maxdepth 4 -type f | head -n 80
+            echo 'settings.gradle tidak ditemukan.'
             exit 1
           fi
+
           PROJECT_DIR=$(dirname "$GRADLE_FILE")
           echo "PROJECT_DIR=$PROJECT_DIR" >> "$GITHUB_ENV"
-          echo "Proyek ditemukan di: $PROJECT_DIR"
+
       - name: Build APK
         run: gradle --no-daemon assembleRelease
         working-directory: ${{ env.PROJECT_DIR }}
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Exam-Browser-Bani-Ihsan-APK
+          name: Exam-Browser-Bani-Ihsan-APK-V2
           path: ${{ env.PROJECT_DIR }}/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
